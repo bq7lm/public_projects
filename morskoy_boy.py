@@ -1,5 +1,5 @@
 import random
-from colorama import Fore, Style  # Не забудьте импортировать colorama для цветного вывода
+from colorama import *
 
 class Board:
     def __init__(self):
@@ -58,7 +58,7 @@ def get_coordinate(prompt):
 
 def game():
     # Размещаем корабли
-    ship_positions = [(0, 0), (0, 1), (0, 2), (1, 4), (1, 5), (3, 0), (3, 2), (3, 4), (4, 4), (5, 0), (5, 2)]
+    ship_positions = [(0, 0), (0, 1), (0, 2), (1, 4), (1, 5), (3, 0), (3, 2), (3, 4), (4, 4), (5, 0), (5, 2)] # Позииции кораблей на поле
     ship = Ship(board.cells, ship_positions)
     ship.place()
     print(board)
