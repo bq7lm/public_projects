@@ -1,5 +1,5 @@
 import random
-from colorama import *
+from colorama import Fore, Style  # Убедитесь, что colorama установлена
 
 class Board:
     def __init__(self):
@@ -16,6 +16,7 @@ class Board:
             board_str += "\n  " + '-' * 21 + '----' + "\n"
         return board_str
 
+
 class Ship:
     def __init__(self, cells, positions):
         self.cells = cells
@@ -31,19 +32,34 @@ class Ship:
 
     def hit(self, x, y):
         if self.cells[x][y] == Fore.GREEN + '■' + Style.RESET_ALL:
-            self.cells[x][y] = Fore.RED + 'X' + Style.RESET_ALL  # Попадание
-            self.hit_count += 1  # Увеличиваем счетчик попаданий
-            print("Попадание!")
-            if self.hit_count == len(self.positions):  # Проверяем, потоплен ли корабль
-                print("Корабли потоплены!")
-                return True  # Возвращаем True, если корабль потоплен
+            # Попадание по собственному кораблю
+            print("Вы промахнулись!")
+            return False  # Вернем False, чтобы не учитывать это как попадание
+        elif self.cells[x][y] == Fore.RED + 'X' + Style.RESET_ALL:
+            # Если уже был выстрел в это место
+            print("Эта клетка уже была выбрана!")
             return False
         elif self.cells[x][y] == 'О':
             self.cells[x][y] = 'T'  # Промах
             print("Промах!")
-        else:
-            print("Эта клетка уже была выбрана!")
-        return False
+            return False
+        elif self.cells[x][y] == Fore.GREEN + 'P' + Style.RESET_ALL:
+            # Попадание по кораблю бота
+            self.cells[x][y] = Fore.RED + 'X' + Style.RESET_ALL  # Попадание
+            self.hit_count += 1  # Увеличиваем счетчик попаданий
+            if self.hit_count == len(self.positions):  # Проверяем, потоплен ли корабль
+                print("Корабль бота потоплен!")
+                return True  # Вернем True, если корабль бота был поражен
+            return True
+
+    def is_sunk(self):
+        return self.hit_count == len(self.positions)  # Проверка, потоплен ли корабль
+
+
+class BotShip(Ship):
+    def __init__(self, cells, positions):
+        super().__init__(cells, positions)
+
 
 def get_coordinate(prompt):
     while True:
@@ -56,11 +72,22 @@ def get_coordinate(prompt):
         except ValueError:
             print('Нужно ввести цифру от 1 до 6!')
 
+
 def game():
     # Размещаем корабли
-    ship_positions = [(0, 0), (0, 1), (0, 2), (1, 4), (1, 5), (3, 0), (3, 2), (3, 4), (4, 4), (5, 0), (5, 2)] # Позииции кораблей на поле
-    ship = Ship(board.cells, ship_positions)
-    ship.place()
+    player_ship_positions = [(0, 0), (0, 1), (0, 2)]
+    bot_ship_positions = [(1, 4), (1, 5)]
+
+    player_ship = Ship(board.cells, player_ship_positions)
+    player_ship.place()
+
+    bot_ship = BotShip(board.cells, bot_ship_positions)
+    bot_ship.place()
+
+    # Помечаем корабль бота символом P
+    for x, y in bot_ship_positions:
+        board.cells[x][y] = Fore.GREEN + 'P' + Style.RESET_ALL
+
     print(board)
 
     bot_moves = set()  # Множество для хранения сделанных ботом ходов
@@ -71,10 +98,10 @@ def game():
 
         player_x = get_coordinate('Введите номер столбца (1-6): ')
         print('Вы выбрали столбец:', player_x + 1)
-        if ship.hit(player_y, player_x):  # Проверяем, потоплен ли корабль после удара игрока
-            print("Вы выиграли!")
-            break  # Выход из игры
 
+        player_hit = player_ship.hit(player_y, player_x)  # Проверяем, попал ли игрок
+
+        # Ход бота, который выполняется всегда
         while True:
             bot_y = random.randint(0, 5)  # Ход бота
             bot_x = random.randint(0, 5)
@@ -84,11 +111,19 @@ def game():
                 break
 
         print(f'Бот выбрал строку {bot_y + 1} и столбец {bot_x + 1}.')
-        if ship.hit(bot_y, bot_x):  # Проверяем, потоплен ли корабль после удара бота
-            print("Бот выиграл!")
+        bot_hit = bot_ship.hit(bot_y, bot_x)  # Проверяем, попал ли бот
+
+        # Проверка на окончание игры
+        if bot_ship.is_sunk():
+            print("Бот потоплен! Вы выиграли!")
+            break  # Выход из игры
+
+        if player_ship.is_sunk():
+            print("Ваш корабль потоплен! Вы проиграли.")
             break  # Выход из игры
 
         print(board)
+
 
 board = Board()
 game()
